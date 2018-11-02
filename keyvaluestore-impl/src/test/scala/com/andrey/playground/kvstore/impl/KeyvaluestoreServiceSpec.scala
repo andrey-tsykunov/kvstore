@@ -11,25 +11,25 @@ class KeyvaluestoreServiceSpec extends AsyncWordSpec with Matchers with BeforeAn
     ServiceTest.defaultSetup
       .withCassandra()
   ) { ctx =>
-    new KeyvaluestoreApplication(ctx) with LocalServiceLocator
+    new KVStoreApplication(ctx) with LocalServiceLocator
   }
 
-  val client = server.serviceClient.implement[KeyvaluestoreService]
+  val client = server.serviceClient.implement[KVStoreService]
 
   override protected def afterAll() = server.stop()
 
   "KeyValueStore service" should {
 
     "say hello" in {
-      client.hello("Alice").invoke().map { answer =>
+      client.get("Alice").invoke().map { answer =>
         answer should ===("Hello, Alice!")
       }
     }
 
     "allow responding with a custom message" in {
       for {
-        _ <- client.useGreeting("Bob").invoke(GreetingMessage("Hi"))
-        answer <- client.hello("Bob").invoke()
+        _ <- client.set("Bob").invoke(UpdateValueRequest("Hi"))
+        answer <- client.get("Bob").invoke()
       } yield {
         answer should ===("Hi, Bob!")
       }

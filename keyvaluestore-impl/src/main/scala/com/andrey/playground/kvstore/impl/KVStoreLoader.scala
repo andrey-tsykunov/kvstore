@@ -6,35 +6,35 @@ import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceCo
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import play.api.libs.ws.ahc.AhcWSComponents
-import com.andrey.playground.kvstore.api.KeyvaluestoreService
+import com.andrey.playground.kvstore.api.KVStoreService
 import com.lightbend.lagom.scaladsl.broker.kafka.LagomKafkaComponents
 import com.softwaremill.macwire._
 
-class KeyvaluestoreLoader extends LagomApplicationLoader {
+class KVStoreLoader extends LagomApplicationLoader {
 
   override def load(context: LagomApplicationContext): LagomApplication =
-    new KeyvaluestoreApplication(context) {
+    new KVStoreApplication(context) {
       override def serviceLocator: ServiceLocator = NoServiceLocator
     }
 
   override def loadDevMode(context: LagomApplicationContext): LagomApplication =
-    new KeyvaluestoreApplication(context) with LagomDevModeComponents
+    new KVStoreApplication(context) with LagomDevModeComponents
 
-  override def describeService = Some(readDescriptor[KeyvaluestoreService])
+  override def describeService = Some(readDescriptor[KVStoreService])
 }
 
-abstract class KeyvaluestoreApplication(context: LagomApplicationContext)
+abstract class KVStoreApplication(context: LagomApplicationContext)
   extends LagomApplication(context)
     with CassandraPersistenceComponents
     with LagomKafkaComponents
     with AhcWSComponents {
 
   // Bind the service that this server provides
-  override lazy val lagomServer = serverFor[KeyvaluestoreService](wire[KeyvaluestoreServiceImpl])
+  override lazy val lagomServer = serverFor[KVStoreService](wire[KVStoreServiceImpl])
 
   // Register the JSON serializer registry
-  override lazy val jsonSerializerRegistry = KeyvaluestoreSerializerRegistry
+  override lazy val jsonSerializerRegistry = KVStoreSerializerRegistry
 
   // Register the KeyValueStore persistent entity
-  persistentEntityRegistry.register(wire[KeyvaluestoreEntity])
+  persistentEntityRegistry.register(wire[KVStoreEntity])
 }

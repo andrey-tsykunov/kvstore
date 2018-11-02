@@ -10,7 +10,7 @@ import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
   * This describes everything that Lagom needs to know about how to serve and
   * consume the KeyvaluestoreStream service.
   */
-trait KeyvaluestoreStreamService extends Service {
+trait KVStoreStreamService extends Service {
 
   def stream: ServiceCall[Source[String, NotUsed], Source[String, NotUsed]]
 

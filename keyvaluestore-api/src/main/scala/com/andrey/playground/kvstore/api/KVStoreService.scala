@@ -6,8 +6,8 @@ import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, Partition
 import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
 
-object KeyvaluestoreService  {
-  val TOPIC_NAME = "greetings"
+object KVStoreService  {
+  val TOPIC_NAME = "kvUpdates"
 }
 
 /**
@@ -16,35 +16,34 @@ object KeyvaluestoreService  {
   * This describes everything that Lagom needs to know about how to serve and
   * consume the KeyvaluestoreService.
   */
-trait KeyvaluestoreService extends Service {
+trait KVStoreService extends Service {
 
   /**
-    * Example: curl http://localhost:9000/api/hello/Alice
+    * Example: curl http://localhost:9000/api/get/alice
     */
-  def hello(id: String): ServiceCall[NotUsed, String]
+  def get(id: String): ServiceCall[NotUsed, String]
 
   /**
-    * Example: curl -H "Content-Type: application/json" -X POST -d '{"message":
-    * "Hi"}' http://localhost:9000/api/hello/Alice
+    * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/get/alice
     */
-  def useGreeting(id: String): ServiceCall[GreetingMessage, Done]
+  def set(id: String): ServiceCall[UpdateValueRequest, Done]
 
 
   /**
     * This gets published to Kafka.
     */
-  def greetingsTopic(): Topic[GreetingMessageChanged]
+  def updatesTopic(): Topic[ValueUpdatedEvent]
 
   override final def descriptor = {
     import Service._
     // @formatter:off
-    named("keyvaluestore")
+    named("kvstore")
       .withCalls(
-        pathCall("/api/hello/:id", hello _),
-        pathCall("/api/hello/:id", useGreeting _)
+        pathCall("/api/get/:id", get _),
+        pathCall("/api/set/:id", set _)
       )
       .withTopics(
-        topic(KeyvaluestoreService.TOPIC_NAME, greetingsTopic)
+        topic(KVStoreService.TOPIC_NAME, updatesTopic)
           // Kafka partitions messages, messages within the same partition will
           // be delivered in order, to ensure that all messages for the same user
           // go to the same partition (and hence are delivered in order with respect
@@ -52,7 +51,7 @@ trait KeyvaluestoreService extends Service {
           // name as the partition key.
           .addProperty(
             KafkaProperties.partitionKeyStrategy,
-            PartitionKeyStrategy[GreetingMessageChanged](_.name)
+            PartitionKeyStrategy[ValueUpdatedEvent](_.key)
           )
       )
       .withAutoAcl(true)
@@ -63,30 +62,30 @@ trait KeyvaluestoreService extends Service {
 /**
   * The greeting message class.
   */
-case class GreetingMessage(message: String)
+case class UpdateValueRequest(value: String)
 
-object GreetingMessage {
+object UpdateValueRequest {
   /**
     * Format for converting greeting messages to and from JSON.
     *
     * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
     */
-  implicit val format: Format[GreetingMessage] = Json.format[GreetingMessage]
+  implicit val format: Format[UpdateValueRequest] = Json.format[UpdateValueRequest]
 }
 
 
 
 /**
   * The greeting message class used by the topic stream.
-  * Different than [[GreetingMessage]], this message includes the name (id).
+  * Different than [[UpdateValueRequest]], this message includes the name (id).
   */
-case class GreetingMessageChanged(name: String, message: String)
+case class ValueUpdatedEvent(key: String, value: String)
 
-object GreetingMessageChanged {
+object ValueUpdatedEvent {
   /**
     * Format for converting greeting messages to and from JSON.
     *
     * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
     */
-  implicit val format: Format[GreetingMessageChanged] = Json.format[GreetingMessageChanged]
+  implicit val format: Format[ValueUpdatedEvent] = Json.format[ValueUpdatedEvent]
 }
