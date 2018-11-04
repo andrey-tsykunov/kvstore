@@ -11,6 +11,8 @@ val h2 = "com.h2database" % "h2" % "1.4.197"
 
 //lagomKafkaPort in ThisBuild := 9092
 //lagomKafkaZookeeperPort in ThisBuild := 2181
+lagomKafkaEnabled in ThisBuild := false
+
 //lagomCassandraPort in ThisBuild := 4000
 
 lazy val `keyvaluestore` = (project in file("."))
