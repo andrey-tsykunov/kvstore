@@ -6,6 +6,7 @@ import akka.Done
 import com.lightbend.lagom.scaladsl.persistence.{AggregateEvent, AggregateEventTag, PersistentEntity}
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
 import com.lightbend.lagom.scaladsl.playjson.{JsonMigration, JsonSerializer, JsonSerializerRegistry}
+import com.typesafe.scalalogging.LazyLogging
 import play.api.libs.json._
 
 import scala.collection.immutable.Seq
@@ -29,7 +30,7 @@ import scala.collection.immutable.Seq
   * This entity defines one event, the [[ValueChangedEvent]] event,
   * which is emitted when a [[UpdateValueCommand]] command is received.
   */
-class KVStoreEntity extends PersistentEntity {
+class KVStoreEntity extends PersistentEntity with LazyLogging {
 
   override type Command = KVStoreCommand[_]
   override type Event = KVStoreEvent
@@ -45,34 +46,34 @@ class KVStoreEntity extends PersistentEntity {
     * is a function of the current state to a set of actions.
     */
   override def behavior: Behavior = {
-    case KVStoreState(message, _) => Actions().onCommand[UpdateValueCommand, Done] {
+    case KVStoreState(currentValue, _) => Actions().onCommand[UpdateValueCommand, Done] {
 
       // Command handler for the UseGreetingMessage command
-      case (UpdateValueCommand(newMessage), ctx, state) =>
-        // In response to this command, we want to first persist it as a
-        // GreetingMessageChanged event
-        ctx.thenPersist(
-          ValueChangedEvent(newMessage, Instant.now())
-        ) { _ =>
+      case (UpdateValueCommand(value), ctx, state) =>
+
+        val event = ValueChangedEvent(value, Instant.now())
+
+        ctx.thenPersist(event) { _ =>
           // Then once the event is successfully persisted, we respond with done.
+          logger.debug(s"Persisted event $event")
           ctx.reply(Done)
         }
 
     }.onReadOnlyCommand[GetValueCommand, String] {
 
       // Command handler for the Hello command
-      case (GetValueCommand(name), ctx, state) =>
+      case (GetValueCommand(key), ctx, state) =>
         // Reply with a message built from the current message, and the name of
         // the person we're meant to say hello to.
-        ctx.reply(s"$message, $name!")
+        ctx.reply(s"$key = $currentValue")
 
     }.onEvent {
 
       // Event handler for the GreetingMessageChanged event
-      case (ValueChangedEvent(newMessage, timestamp), state) =>
+      case (ValueChangedEvent(value, timestamp), state) =>
         // We simply update the current state to use the greeting message from
         // the event.
-        KVStoreState(newMessage, timestamp)
+        KVStoreState(value, timestamp)
 
     }
   }
@@ -81,7 +82,7 @@ class KVStoreEntity extends PersistentEntity {
 /**
   * The current state held by the persistent entity.
   */
-case class KVStoreState(message: String, timestamp: Instant)
+case class KVStoreState(value: String, timestamp: Instant)
 
 object KVStoreState {
   /**

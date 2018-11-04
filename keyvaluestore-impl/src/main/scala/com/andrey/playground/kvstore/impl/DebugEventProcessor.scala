@@ -29,7 +29,7 @@ class DebugEventProcessor(implicit ec: ExecutionContext) extends ReadSideProcess
         .mapAsync(1) { eventElement =>
 
           Future {
-            logger.info(s"Observed event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
+            logger.debug(s"Observed event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
             Done
           }
         }

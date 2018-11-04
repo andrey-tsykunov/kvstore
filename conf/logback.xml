@@ -1,4 +1,4 @@
-<configuration scan="true">
+<configuration scan="true" scanPeriod="2 seconds">
 
   <conversionRule conversionWord="coloredLevel" converterClass="com.lightbend.lagom.internal.logback.ColoredLevel" />
 
@@ -16,12 +16,14 @@
   <logger name="com.lightbend.lagom" level="INFO" />
 
   <!-- Cassandra and the datasta driver are used by the Lagom event sourcing modules -->
-  <logger name="org.apache.cassandra" level="INFO" />
-  <logger name="com.datastax.driver" level="INFO" />
+  <logger name="org.apache.cassandra" level="DEBUG" />
+  <logger name="com.datastax.driver" level="DEBUG" />
   <!-- Turning off connection error logging to avoid noise when services are forcibly stopped -->
   <logger name="com.datastax.driver.core.ControlConnection" level="OFF" />
   <!-- Turn down Kafka noise -->
   <logger name="org.apache.kafka" level="INFO" />
+
+  <logger name="com.andrey.playground.kvstore" level="DEBUG" />
 
   <root level="INFO">
     <appender-ref ref="STDOUT" />
