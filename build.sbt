@@ -6,6 +6,8 @@ scalaVersion in ThisBuild := "2.12.7"
 
 val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
+val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
+val h2 = "com.h2database" % "h2" % "1.4.197"
 
 //lagomKafkaPort in ThisBuild := 9092
 //lagomKafkaZookeeperPort in ThisBuild := 2181
@@ -26,10 +28,13 @@ lazy val `keyvaluestore-impl` = (project in file("keyvaluestore-impl"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslPersistenceCassandra,
+      lagomScaladslPersistenceJdbc,
       lagomScaladslKafkaBroker,
       lagomScaladslTestKit,
+      h2,
       macwire,
-      scalaTest
+      scalaTest,
+      scalaLogging,
     )
   )
   .settings(lagomForkedTestSettings: _*)

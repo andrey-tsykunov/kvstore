@@ -1,5 +1,7 @@
 package com.andrey.playground.kvstore.api
 
+import java.time.Instant
+
 import akka.{Done, NotUsed}
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, PartitionKeyStrategy}
@@ -11,10 +13,45 @@ object KVStoreService  {
 }
 
 /**
+  * Public API: request
+  */
+case class UpdateValueRequest(value: String)
+
+object UpdateValueRequest {
+  implicit val updateValue: Format[UpdateValueRequest] = Json.format[UpdateValueRequest]
+}
+
+case class KeyValue(key: String, value: String, timestamp: Instant)
+case class SearchResult(keyValues: Seq[KeyValue])
+
+object SearchResult {
+  implicit val keyValue = Json.format[KeyValue]
+  implicit val searchResult = Json.format[SearchResult]
+}
+
+case class HistoryEvent(key: String, value: String)
+
+case class History(events: Seq[HistoryEvent])
+
+object History {
+  implicit val historyEvent: Format[HistoryEvent] = Json.format[HistoryEvent]
+  implicit val history: Format[History] = Json.format[History]
+}
+
+/**
+Public API: update message
+  * Different than [[UpdateValueRequest]], this message includes the name (id).
+  */
+case class ValueUpdatedMessage(key: String, value: String, timestamp: Instant)
+
+object ValueUpdatedMessage {
+
+  implicit val valueUpdatedMessage: Format[ValueUpdatedMessage] = Json.format[ValueUpdatedMessage]
+}
+
+/**
   * The KeyValueStore service interface.
   * <p>
-  * This describes everything that Lagom needs to know about how to serve and
-  * consume the KeyvaluestoreService.
   */
 trait KVStoreService extends Service {
 
@@ -28,11 +65,20 @@ trait KVStoreService extends Service {
     */
   def set(id: String): ServiceCall[UpdateValueRequest, Done]
 
+  /**
+    * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/history/alice
+    */
+  def history(id: String): ServiceCall[NotUsed, History]
+
+  /**
+    * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/search
+    */
+  def search(): ServiceCall[NotUsed, SearchResult]
 
   /**
     * This gets published to Kafka.
     */
-  def updatesTopic(): Topic[ValueUpdatedEvent]
+  def updatesTopic(): Topic[ValueUpdatedMessage]
 
   override final def descriptor = {
     import Service._
@@ -40,6 +86,8 @@ trait KVStoreService extends Service {
     named("kvstore")
       .withCalls(
         pathCall("/api/get/:id", get _),
+        pathCall("/api/history/:id", history _),
+        pathCall("/api/search", search _),
         pathCall("/api/set/:id", set _)
       )
       .withTopics(
@@ -51,41 +99,10 @@ trait KVStoreService extends Service {
           // name as the partition key.
           .addProperty(
             KafkaProperties.partitionKeyStrategy,
-            PartitionKeyStrategy[ValueUpdatedEvent](_.key)
+            PartitionKeyStrategy[ValueUpdatedMessage](_.key)
           )
       )
       .withAutoAcl(true)
     // @formatter:on
   }
-}
-
-/**
-  * The greeting message class.
-  */
-case class UpdateValueRequest(value: String)
-
-object UpdateValueRequest {
-  /**
-    * Format for converting greeting messages to and from JSON.
-    *
-    * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
-    */
-  implicit val format: Format[UpdateValueRequest] = Json.format[UpdateValueRequest]
-}
-
-
-
-/**
-  * The greeting message class used by the topic stream.
-  * Different than [[UpdateValueRequest]], this message includes the name (id).
-  */
-case class ValueUpdatedEvent(key: String, value: String)
-
-object ValueUpdatedEvent {
-  /**
-    * Format for converting greeting messages to and from JSON.
-    *
-    * This will be picked up by a Lagom implicit conversion from Play's JSON format to Lagom's message serializer.
-    */
-  implicit val format: Format[ValueUpdatedEvent] = Json.format[ValueUpdatedEvent]
 }

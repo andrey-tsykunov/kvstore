@@ -1,12 +1,12 @@
 package com.andrey.playground.kvstore.impl
 
-import java.time.LocalDateTime
+import java.time.{Instant, LocalDateTime}
 
 import akka.Done
 import com.lightbend.lagom.scaladsl.persistence.{AggregateEvent, AggregateEventTag, PersistentEntity}
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
-import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
-import play.api.libs.json.{Format, Json}
+import com.lightbend.lagom.scaladsl.playjson.{JsonMigration, JsonSerializer, JsonSerializerRegistry}
+import play.api.libs.json._
 
 import scala.collection.immutable.Seq
 
@@ -38,7 +38,7 @@ class KVStoreEntity extends PersistentEntity {
   /**
     * The initial state. This is used if there is no snapshotted state to be found.
     */
-  override def initialState: KVStoreState = KVStoreState("Hello", LocalDateTime.now.toString)
+  override def initialState: KVStoreState = KVStoreState("NA", Instant.now())
 
   /**
     * An entity can define different behaviours for different states, so the behaviour
@@ -52,7 +52,7 @@ class KVStoreEntity extends PersistentEntity {
         // In response to this command, we want to first persist it as a
         // GreetingMessageChanged event
         ctx.thenPersist(
-          ValueChangedEvent(newMessage)
+          ValueChangedEvent(newMessage, Instant.now())
         ) { _ =>
           // Then once the event is successfully persisted, we respond with done.
           ctx.reply(Done)
@@ -69,10 +69,10 @@ class KVStoreEntity extends PersistentEntity {
     }.onEvent {
 
       // Event handler for the GreetingMessageChanged event
-      case (ValueChangedEvent(newMessage), state) =>
+      case (ValueChangedEvent(newMessage, timestamp), state) =>
         // We simply update the current state to use the greeting message from
         // the event.
-        KVStoreState(newMessage, LocalDateTime.now().toString)
+        KVStoreState(newMessage, timestamp)
 
     }
   }
@@ -81,7 +81,7 @@ class KVStoreEntity extends PersistentEntity {
 /**
   * The current state held by the persistent entity.
   */
-case class KVStoreState(message: String, timestamp: String)
+case class KVStoreState(message: String, timestamp: Instant)
 
 object KVStoreState {
   /**
@@ -94,33 +94,6 @@ object KVStoreState {
     * serialized and deserialized when storing to and from the database.
     */
   implicit val format: Format[KVStoreState] = Json.format
-}
-
-/**
-  * This interface defines all the events that the KeyvaluestoreEntity supports.
-  */
-sealed trait KVStoreEvent extends AggregateEvent[KVStoreEvent] {
-  def aggregateTag = KVStoreEvent.Tag
-}
-
-object KVStoreEvent {
-  val Tag = AggregateEventTag[KVStoreEvent]
-}
-
-/**
-  * An event that represents a change in greeting message.
-  */
-case class ValueChangedEvent(value: String) extends KVStoreEvent
-
-object ValueChangedEvent {
-
-  /**
-    * Format for the greeting message changed event.
-    *
-    * Events get stored and loaded from the database, hence a JSON format
-    * needs to be declared so that they can be serialized and deserialized.
-    */
-  implicit val format: Format[ValueChangedEvent] = Json.format
 }
 
 /**
@@ -172,20 +145,4 @@ object GetValueCommand {
   implicit val format: Format[GetValueCommand] = Json.format
 }
 
-/**
-  * Akka serialization, used by both persistence and remoting, needs to have
-  * serializers registered for every type serialized or deserialized. While it's
-  * possible to use any serializer you want for Akka messages, out of the box
-  * Lagom provides support for JSON, via this registry abstraction.
-  *
-  * The serializers are registered here, and then provided to Lagom in the
-  * application loader.
-  */
-object KVStoreSerializerRegistry extends JsonSerializerRegistry {
-  override def serializers: Seq[JsonSerializer[_]] = Seq(
-    JsonSerializer[UpdateValueCommand],
-    JsonSerializer[GetValueCommand],
-    JsonSerializer[ValueChangedEvent],
-    JsonSerializer[KVStoreState]
-  )
-}
+
