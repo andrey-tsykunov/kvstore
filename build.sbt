@@ -16,16 +16,18 @@ lagomKafkaEnabled in ThisBuild := false
 //lagomCassandraPort in ThisBuild := 4000
 
 lazy val `keyvaluestore` = (project in file("."))
-  .aggregate(`keyvaluestore-api`, `keyvaluestore-impl`, `keyvaluestore-stream-api`, `keyvaluestore-stream-impl`)
+  .aggregate(`kvstore-api`, `kvstore-impl`, `kvstore-stream-api`, `kvstore-stream-impl`)
 
-lazy val `keyvaluestore-api` = (project in file("keyvaluestore-api"))
+lazy val `kvstore-api` = (project in file("kvstore-api"))
   .settings(
     libraryDependencies ++= Seq(
-      lagomScaladslApi
+      lagomScaladslApi,
+      lagomScaladslClient,
+      scalaLogging
     )
   )
 
-lazy val `keyvaluestore-impl` = (project in file("keyvaluestore-impl"))
+lazy val `kvstore-impl` = (project in file("kvstore-impl"))
   .enablePlugins(LagomScala)
   .settings(
     libraryDependencies ++= Seq(
@@ -35,21 +37,20 @@ lazy val `keyvaluestore-impl` = (project in file("keyvaluestore-impl"))
       lagomScaladslTestKit,
       h2,
       macwire,
-      scalaTest,
-      scalaLogging,
+      scalaTest
     )
   )
   .settings(lagomForkedTestSettings: _*)
-  .dependsOn(`keyvaluestore-api`)
+  .dependsOn(`kvstore-api`)
 
-lazy val `keyvaluestore-stream-api` = (project in file("keyvaluestore-stream-api"))
+lazy val `kvstore-stream-api` = (project in file("kvstore-stream-api"))
   .settings(
     libraryDependencies ++= Seq(
       lagomScaladslApi
     )
   )
 
-lazy val `keyvaluestore-stream-impl` = (project in file("keyvaluestore-stream-impl"))
+lazy val `kvstore-stream-impl` = (project in file("kvstore-stream-impl"))
   .enablePlugins(LagomScala)
   .settings(
     libraryDependencies ++= Seq(
@@ -58,4 +59,4 @@ lazy val `keyvaluestore-stream-impl` = (project in file("keyvaluestore-stream-im
       scalaTest
     )
   )
-  .dependsOn(`keyvaluestore-stream-api`, `keyvaluestore-api`)
+  .dependsOn(`kvstore-stream-api`, `kvstore-api`)

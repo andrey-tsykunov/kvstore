@@ -16,8 +16,8 @@
   <logger name="com.lightbend.lagom" level="INFO" />
 
   <!-- Cassandra and the datasta driver are used by the Lagom event sourcing modules -->
-  <logger name="org.apache.cassandra" level="INFO" />
-  <logger name="com.datastax.driver" level="INFO" />
+  <logger name="org.apache.cassandra" level="WARN" />
+  <logger name="com.datastax.driver" level="WARN" />
   <!-- Turning off connection error logging to avoid noise when services are forcibly stopped -->
   <logger name="com.datastax.driver.core.ControlConnection" level="OFF" />
   <!-- Turn down Kafka noise -->
