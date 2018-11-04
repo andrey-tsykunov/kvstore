@@ -12,6 +12,8 @@
 
     <logger name="akka" level="WARN" />
 
+    <logger name="com.andrey.playground.kvstore" level="DEBUG" />
+
     <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
