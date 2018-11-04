@@ -39,7 +39,8 @@ abstract class KVStoreApplication(context: LagomApplicationContext)
 
   lazy val debugEventProcessor = wire[DebugEventProcessor]
 
-  lazy val inMemoryEventProcessor = wire[InMemoryEventProcessor]
+  lazy val inMemoryEventProcessor = wire[KeyValuesEventProcessor]
+  lazy val historyEventProcessor = wire[HistoryEventProcessor]
 
   lazy val repository = wire[KVRepository]
 
@@ -53,4 +54,5 @@ abstract class KVStoreApplication(context: LagomApplicationContext)
   persistentEntityRegistry.register(wire[KVStoreEntity])
   readSide.register(debugEventProcessor)
   readSide.register(inMemoryEventProcessor)
+  readSide.register(historyEventProcessor)
 }

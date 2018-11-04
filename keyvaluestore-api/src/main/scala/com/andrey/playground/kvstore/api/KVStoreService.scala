@@ -29,7 +29,7 @@ object SearchResult {
   implicit val searchResult = Json.format[SearchResult]
 }
 
-case class HistoryEvent(key: String, value: String)
+case class HistoryEvent(key: String, value: String, timestamp: Instant)
 
 case class History(events: Seq[HistoryEvent])
 
@@ -58,17 +58,17 @@ trait KVStoreService extends Service {
   /**
     * Example: curl http://localhost:9000/api/get/alice
     */
-  def get(id: String): ServiceCall[NotUsed, String]
+  def get(key: String): ServiceCall[NotUsed, String]
 
   /**
     * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/get/alice
     */
-  def set(id: String): ServiceCall[UpdateValueRequest, Done]
+  def set(key: String): ServiceCall[UpdateValueRequest, Done]
 
   /**
     * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/history/alice
     */
-  def history(id: String): ServiceCall[NotUsed, History]
+  def history(key: String): ServiceCall[NotUsed, History]
 
   /**
     * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/search
@@ -85,10 +85,10 @@ trait KVStoreService extends Service {
     // @formatter:off
     named("kvstore")
       .withCalls(
-        pathCall("/api/get/:id", get _),
-        pathCall("/api/history/:id", history _),
+        pathCall("/api/get/:key", get _),
+        pathCall("/api/history/:key", history _),
         pathCall("/api/search", search _),
-        pathCall("/api/set/:id", set _)
+        pathCall("/api/set/:key", set _)
       )
       .withTopics(
         topic(KVStoreService.TOPIC_NAME, updatesTopic)

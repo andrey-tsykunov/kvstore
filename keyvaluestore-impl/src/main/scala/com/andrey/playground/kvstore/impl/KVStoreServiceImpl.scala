@@ -41,8 +41,8 @@ class KVStoreServiceImpl(persistentEntityRegistry: PersistentEntityRegistry, rep
     }
   }
 
-  override def history(id: String): ServiceCall[NotUsed, History] = ServiceCall { request =>
-    repo.getHistory()
+  override def history(key: String): ServiceCall[NotUsed, History] = ServiceCall { request =>
+    repo.getHistory(key)
   }
 
   /**

@@ -6,16 +6,18 @@ import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, ReadSidePro
 import com.lightbend.lagom.scaladsl.persistence.jdbc.{JdbcReadSide, JdbcSession}
 import com.typesafe.scalalogging.LazyLogging
 
+import JdbcSession._
+
 import scala.concurrent.ExecutionContext
 
-class InMemoryEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionContext)
+class KeyValuesEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionContext)
   extends ReadSideProcessor[KVStoreEvent] with LazyLogging {
 
   val createTableSql =
-    "CREATE TABLE IF NOT EXISTS PUBLIC.keyvalues (key NVARCHAR2(64), value NVARCHAR2(512), timestamp TIMESTAMP WITH TIME ZONE, PRIMARY KEY(key))"
+    "CREATE TABLE IF NOT EXISTS PUBLIC.keyvalues (key NVARCHAR2(64), value NVARCHAR2(512), timestamp TIMESTAMP WITH TIME ZONE, PRIMARY KEY (key))"
 
   val buildTables: Connection => Unit = { connection =>
-    JdbcSession.tryWith(connection.createStatement()) {
+    tryWith(connection.createStatement()) {
       _.executeUpdate(createTableSql)
     }
   }
@@ -25,7 +27,7 @@ class InMemoryEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionConte
 
       logger.info(s"Saving event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
 
-      JdbcSession.tryWith(
+      tryWith(
         // "MERGE" is H2's equivalent to 'INSERT OR UPDATE'.
         // See http://www.h2database.com/html/grammar.html#merge
         // We use "MERGE" here because we want this read-side to keep only the lastest message per each name
