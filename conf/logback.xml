@@ -4,7 +4,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%date{"HH:mm:ss.SSS"} [%thread] %-5level %logger [%mdc] - %msg%n</pattern>
+      <pattern>%date{"HH:mm:ss.SSS"} %-5level [%thread] %logger{16} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -16,8 +16,8 @@
   <logger name="com.lightbend.lagom" level="INFO" />
 
   <!-- Cassandra and the datasta driver are used by the Lagom event sourcing modules -->
-  <logger name="org.apache.cassandra" level="DEBUG" />
-  <logger name="com.datastax.driver" level="DEBUG" />
+  <logger name="org.apache.cassandra" level="INFO" />
+  <logger name="com.datastax.driver" level="INFO" />
   <!-- Turning off connection error logging to avoid noise when services are forcibly stopped -->
   <logger name="com.datastax.driver.core.ControlConnection" level="OFF" />
   <!-- Turn down Kafka noise -->

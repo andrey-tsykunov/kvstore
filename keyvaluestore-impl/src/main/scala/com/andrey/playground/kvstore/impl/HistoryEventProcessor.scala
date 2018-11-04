@@ -36,6 +36,7 @@ class HistoryEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionContex
         statement.setString(2, eventElement.event.value)
         statement.setTimestamp(3, java.sql.Timestamp.from( eventElement.event.timestamp ))
         statement.executeUpdate()
+        logger.debug(s"Saved event ${eventElement.entityId} @ offset ${eventElement.offset}")
       }
   }
 

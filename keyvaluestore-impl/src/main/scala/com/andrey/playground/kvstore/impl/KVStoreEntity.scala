@@ -36,10 +36,19 @@ class KVStoreEntity extends PersistentEntity with LazyLogging {
   override type Event = KVStoreEvent
   override type State = KVStoreState
 
+  override def recoveryCompleted(state: KVStoreState): KVStoreState = {
+
+    logger.debug(s"$entityId: Recovered")
+    super.recoveryCompleted(state)
+  }
+
   /**
     * The initial state. This is used if there is no snapshotted state to be found.
     */
-  override def initialState: KVStoreState = KVStoreState("NA", Instant.now())
+  override def initialState: KVStoreState = {
+    logger.debug(s"$entityId: Created entity")
+    KVStoreState("NA", Instant.now())
+  }
 
   /**
     * An entity can define different behaviours for different states, so the behaviour
@@ -48,33 +57,27 @@ class KVStoreEntity extends PersistentEntity with LazyLogging {
   override def behavior: Behavior = {
     case KVStoreState(currentValue, _) => Actions().onCommand[UpdateValueCommand, Done] {
 
-      // Command handler for the UseGreetingMessage command
       case (UpdateValueCommand(value), ctx, state) =>
 
         val event = ValueChangedEvent(value, Instant.now())
 
+        logger.debug(s"$entityId: Persisting event $event")
+
         ctx.thenPersist(event) { _ =>
-          // Then once the event is successfully persisted, we respond with done.
-          logger.debug(s"Persisted event $event")
+          logger.debug(s"$entityId: Persisted event $event")
           ctx.reply(Done)
         }
 
     }.onReadOnlyCommand[GetValueCommand, String] {
 
-      // Command handler for the Hello command
       case (GetValueCommand(key), ctx, state) =>
-        // Reply with a message built from the current message, and the name of
-        // the person we're meant to say hello to.
         ctx.reply(s"$key = $currentValue")
 
     }.onEvent {
+      case (event @ ValueChangedEvent(value, timestamp), state) =>
 
-      // Event handler for the GreetingMessageChanged event
-      case (ValueChangedEvent(value, timestamp), state) =>
-        // We simply update the current state to use the greeting message from
-        // the event.
+        logger.debug(s"$entityId: Replaying event $event")
         KVStoreState(value, timestamp)
-
     }
   }
 }

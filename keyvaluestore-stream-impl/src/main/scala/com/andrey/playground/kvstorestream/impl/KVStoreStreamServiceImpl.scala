@@ -9,8 +9,8 @@ import scala.concurrent.Future
 /**
   * Implementation of the KeyvaluestoreStreamService.
   */
-class KVStoreStreamServiceImpl(keyvaluestoreService: KVStoreService) extends KVStoreStreamService {
+class KVStoreStreamServiceImpl(kvstoreService: KVStoreService) extends KVStoreStreamService {
   def stream = ServiceCall { hellos =>
-    Future.successful(hellos.mapAsync(8)(keyvaluestoreService.get(_).invoke()))
+    Future.successful(hellos.mapAsync(8)(kvstoreService.get(_).invoke()))
   }
 }

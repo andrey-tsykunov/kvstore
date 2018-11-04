@@ -28,8 +28,8 @@ class DebugEventProcessor(implicit ec: ExecutionContext) extends ReadSideProcess
       Flow[EventStreamElement[KVStoreEvent]]
         .mapAsync(1) { eventElement =>
 
+          logger.debug(s"Observed event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
           Future {
-            logger.debug(s"Observed event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
             Done
           }
         }
