@@ -5,6 +5,7 @@ import java.time.Instant
 import akka.{Done, NotUsed}
 import com.lightbend.lagom.scaladsl.api.broker.Topic
 import com.lightbend.lagom.scaladsl.api.broker.kafka.{KafkaProperties, PartitionKeyStrategy}
+import com.lightbend.lagom.scaladsl.api.transport.Method
 import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
 
@@ -13,20 +14,14 @@ object KVStoreService  {
   val name = "kvstore-svc"
 }
 
-/**
-  * Public API: request
-  */
-case class UpdateValueRequest(value: String)
+case class KeyValue(key: String, value: String, tags: Set[String], timestamp: Instant)
 
-object UpdateValueRequest {
-  implicit val updateValue: Format[UpdateValueRequest] = Json.format[UpdateValueRequest]
+object KeyValue {
+  implicit val keyValue = Json.format[KeyValue]
 }
 
-case class KeyValue(key: String, value: String, timestamp: Instant)
 case class SearchResult(keyValues: Seq[KeyValue])
-
 object SearchResult {
-  implicit val keyValue = Json.format[KeyValue]
   implicit val searchResult = Json.format[SearchResult]
 }
 
@@ -40,17 +35,6 @@ object History {
 }
 
 /**
-Public API: update message
-  * Different than [[UpdateValueRequest]], this message includes the name (id).
-  */
-case class ValueUpdatedMessage(key: String, value: String, timestamp: Instant)
-
-object ValueUpdatedMessage {
-
-  implicit val valueUpdatedMessage: Format[ValueUpdatedMessage] = Json.format[ValueUpdatedMessage]
-}
-
-/**
   * The KeyValueStore service interface.
   * <p>
   */
@@ -61,12 +45,22 @@ trait KVStoreService extends Service {
   /**
     * Example: curl http://localhost:9000/api/get/alice
     */
-  def get(key: String): ServiceCall[NotUsed, String]
+  def get(key: String): ServiceCall[NotUsed, KeyValue]
 
   /**
-    * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/get/alice
+    * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/set/alice
     */
   def set(key: String): ServiceCall[UpdateValueRequest, Done]
+
+  /**
+    * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/tag/pretty/alice
+    */
+  def addTag(tag: String, key: String): ServiceCall[NotUsed, Done]
+
+  /**
+    * Example: curl -H "Content-Type: application/json" -X DELETE -d '{"value": "Hi"}' http://localhost:9000/api/tag/pretty/alice
+    */
+  def removeTag(tag: String, key: String): ServiceCall[NotUsed, Done]
 
   /**
     * Example: curl -H "Content-Type: application/json" -X POST -d '{"value": "Hi"}' http://localhost:9000/api/history/alice
@@ -81,7 +75,7 @@ trait KVStoreService extends Service {
   /**
     * This gets published to Kafka.
     */
-  def updatesTopic(): Topic[ValueUpdatedMessage]
+  def updatesTopic(): Topic[KVMessage]
 
   override final def descriptor = {
     import Service._
@@ -91,7 +85,9 @@ trait KVStoreService extends Service {
         pathCall("/api/get/:key", get _),
         pathCall("/api/history/:key", history _),
         pathCall("/api/search", search _),
-        pathCall("/api/set/:key", set _)
+        pathCall("/api/set/:key", set _),
+        restCall(Method.POST, "/api/tag/:tag/:key", addTag _),
+        restCall(Method.DELETE, "/api/tag/:tag/:key", removeTag _)
       )
       .withTopics(
         topic(updatesTopicName, updatesTopic)
@@ -102,7 +98,7 @@ trait KVStoreService extends Service {
           // name as the partition key.
           .addProperty(
             KafkaProperties.partitionKeyStrategy,
-            PartitionKeyStrategy[ValueUpdatedMessage](_.key)
+            PartitionKeyStrategy[KVMessage](_.key)
           )
       )
       .withAutoAcl(true)

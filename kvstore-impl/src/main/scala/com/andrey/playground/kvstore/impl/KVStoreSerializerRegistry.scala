@@ -1,7 +1,7 @@
 package com.andrey.playground.kvstore.impl
 
 import com.lightbend.lagom.scaladsl.playjson.{JsonMigration, JsonSerializer, JsonSerializerRegistry}
-import play.api.libs.json.{JsObject, JsString}
+import play.api.libs.json.{JsArray, JsObject, JsString}
 
 import scala.collection.immutable.Seq
 
@@ -32,8 +32,19 @@ object KVStoreSerializerRegistry extends JsonSerializerRegistry {
     }
   }
 
+  private val kvStoreStateMigration = new JsonMigration(2) {
+    override def transform(fromVersion: Int, json: JsObject): JsObject = {
+      if (fromVersion < 2) {
+        json + ("tags" -> JsArray())
+      } else {
+        json
+      }
+    }
+  }
+
   // https://www.lagomframework.com/documentation/1.4.x/scala/Serialization.html#Schema-Evolution
   override def migrations = Map[String, JsonMigration](
-    classOf[ValueChangedEvent].getName -> valueChangedEventMigration
+    classOf[ValueChangedEvent].getName -> valueChangedEventMigration,
+    classOf[KVStoreState].getName -> kvStoreStateMigration
   )
 }

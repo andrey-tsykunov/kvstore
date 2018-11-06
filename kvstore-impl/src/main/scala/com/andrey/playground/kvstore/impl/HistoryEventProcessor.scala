@@ -23,7 +23,7 @@ class HistoryEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionContex
   val processKeyValueChanged: (Connection, EventStreamElement[ValueChangedEvent]) => Unit = {
     (connection, eventElement) =>
 
-      logger.debug(s"Saving event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
+      logger.trace(s"Saving event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
 
       JdbcSession.tryWith(
         // "MERGE" is H2's equivalent to 'INSERT OR UPDATE'.

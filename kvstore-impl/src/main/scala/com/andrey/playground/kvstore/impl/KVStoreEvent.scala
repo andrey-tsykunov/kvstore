@@ -19,18 +19,23 @@ object KVStoreEvent {
   val Tag = AggregateEventTag.sharded[KVStoreEvent]("KVStoreEvent", NumShards)
 }
 
-/**
-  * An event that represents a change in greeting message.
-  */
 case class ValueChangedEvent(value: String, timestamp: Instant) extends KVStoreEvent
 
 object ValueChangedEvent {
 
-  /**
-    * Format for the greeting message changed event.
-    *
-    * Events get stored and loaded from the database, hence a JSON format
-    * needs to be declared so that they can be serialized and deserialized.
-    */
-  implicit val format: Format[ValueChangedEvent] = Json.format
+  implicit val format: Format[ValueChangedEvent] = Json.format[ValueChangedEvent]
+}
+
+case class TagAddedEvent(tag: String, timestamp: Instant) extends KVStoreEvent
+
+object TagAddedEvent {
+
+  implicit val format: Format[TagAddedEvent] = Json.format[TagAddedEvent]
+}
+
+case class TagRemovedEvent(tag: String, timestamp: Instant) extends KVStoreEvent
+
+object TagRemovedEvent {
+
+  implicit val format: Format[TagRemovedEvent] = Json.format[TagRemovedEvent]
 }

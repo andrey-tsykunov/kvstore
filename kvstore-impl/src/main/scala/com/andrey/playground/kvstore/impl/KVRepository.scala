@@ -49,6 +49,7 @@ class KVRepository(session: JdbcSession, readSide: ReadSide) {
       keyValues += KeyValue(
         rs.getString("key"),
         rs.getString("value"),
+        Set.empty,
         rs.getTimestamp("timestamp").toInstant
       )
     }
