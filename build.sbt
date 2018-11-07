@@ -8,6 +8,8 @@ val macwire = "com.softwaremill.macwire" %% "macros" % "2.3.0" % "provided"
 val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 val h2 = "com.h2database" % "h2" % "1.4.197"
+val alpakkaCassandra = "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "1.0-M1"
+val cats = "org.typelevel" %% "cats-core" % "1.4.0"
 
 //lagomKafkaPort in ThisBuild := 9092
 //lagomKafkaZookeeperPort in ThisBuild := 2181
@@ -36,8 +38,10 @@ lazy val `kvstore-impl` = (project in file("kvstore-impl"))
       lagomScaladslKafkaBroker,
       lagomScaladslTestKit,
       h2,
+      cats,
       macwire,
-      scalaTest
+      scalaTest,
+      alpakkaCassandra % Test
     )
   )
   .settings(lagomForkedTestSettings: _*)

@@ -9,8 +9,6 @@ import org.scalatest.{AsyncFunSuite, FunSuite, Matchers}
 
 class KVStoreServiceAcceptanceTest extends AsyncFunSuite with Matchers with LazyLogging with ScalaFutures {
 
-  logger.info("Starting")
-
   val app = new KVStoreServiceClientApp()
 
   test("can update key value") {
@@ -29,23 +27,4 @@ class KVStoreServiceAcceptanceTest extends AsyncFunSuite with Matchers with Lazy
         v.tags.contains("tag2") shouldBe true
       }
   }
-
-  ignore("subscribe to key value updates") {
-    val source = app.kvStoreService.updatesTopic().subscribe
-      .withGroupId("KVStoreServiceAcceptanceTest")
-      .atMostOnceSource
-
-    implicit val m = app.materializer
-
-    val log = Sink.foreach[KVMessage] { v =>
-      logger.debug(s"Received $v")
-    }
-
-    source.runWith(log).map { it =>
-
-      // never completes
-      it shouldBe Done
-    }
-  }
-
 }

@@ -10,7 +10,7 @@ import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
 import play.api.libs.json.{Format, Json}
 
 object KVStoreService  {
-  val updatesTopicName = "kvUpdates"
+  val updatesTopicName = "kvstore"
   val name = "kvstore-svc"
 }
 

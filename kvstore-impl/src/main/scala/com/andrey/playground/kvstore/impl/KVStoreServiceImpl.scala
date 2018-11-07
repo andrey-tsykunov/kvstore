@@ -50,8 +50,12 @@ class KVStoreServiceImpl(persistentEntityRegistry: PersistentEntityRegistry, rep
   override def updatesTopic(): Topic[api.KVMessage] =
     TopicProducer.taggedStreamWithOffset(KVStoreEvent.Tag) {
       (tag, fromOffset) =>
+        logger.info(s"Initializing event stream for tag $tag from offset $fromOffset")
         persistentEntityRegistry.eventStream(tag, fromOffset)
-          .map(ev => (convertToPublicApi(ev), ev.offset))
+          .map(ev => {
+
+            (convertToPublicApi(ev), ev.offset)
+          })
     }
 
   private def convertToPublicApi(eventElement: EventStreamElement[KVStoreEvent]): api.KVMessage = {

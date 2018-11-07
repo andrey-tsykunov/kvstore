@@ -2,7 +2,7 @@ package com.andrey.playground.kvstore.impl
 
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
-import com.lightbend.lagom.scaladsl.persistence.cassandra.{CassandraPersistenceComponents, WriteSideCassandraPersistenceComponents}
+import com.lightbend.lagom.scaladsl.persistence.cassandra.{CassandraPersistenceComponents, CustomReadSideCassandraPersistenceComponents, ReadSideCassandraPersistenceComponents, WriteSideCassandraPersistenceComponents}
 import com.lightbend.lagom.scaladsl.server._
 import com.lightbend.lagom.scaladsl.devmode.LagomDevModeComponents
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -30,19 +30,21 @@ class KVStoreLoader extends LagomApplicationLoader {
 
 abstract class KVStoreApplication(context: LagomApplicationContext)
   extends LagomApplication(context)
-    //with CassandraPersistenceComponents
     with WriteSideCassandraPersistenceComponents
+    with CustomReadSideCassandraPersistenceComponents
     with ReadSideJdbcPersistenceComponents
     with HikariCPComponents
     with LagomKafkaComponents
     with AhcWSComponents {
 
-  lazy val debugEventProcessor = wire[DebugEventProcessor]
+  override lazy val offsetStore = super.getCassandraOffsetStore
+
+  //lazy val debugEventProcessor = wire[DebugEventProcessor]
 
   lazy val inMemoryEventProcessor = wire[KeyValuesEventProcessor]
   lazy val historyEventProcessor = wire[HistoryEventProcessor]
 
-  lazy val repository = wire[KVRepository]
+  lazy val repository: KVRepository = wire[JdbcKVRepository]
 
   // Bind the service that this server provides
   override lazy val lagomServer = serverFor[KVStoreService](wire[KVStoreServiceImpl])
@@ -52,7 +54,7 @@ abstract class KVStoreApplication(context: LagomApplicationContext)
 
   // Register the KeyValueStore persistent entity
   persistentEntityRegistry.register(wire[KVStoreEntity])
-  readSide.register(debugEventProcessor)
+//  readSide.register(debugEventProcessor)
   readSide.register(inMemoryEventProcessor)
   readSide.register(historyEventProcessor)
 }
