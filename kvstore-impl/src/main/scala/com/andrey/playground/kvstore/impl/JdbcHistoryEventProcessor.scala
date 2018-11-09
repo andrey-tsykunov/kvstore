@@ -6,18 +6,16 @@ import com.lightbend.lagom.scaladsl.persistence.{EventStreamElement, ReadSidePro
 import com.lightbend.lagom.scaladsl.persistence.jdbc.{JdbcReadSide, JdbcSession}
 import com.typesafe.scalalogging.LazyLogging
 
-import JdbcSession._
-
 import scala.concurrent.ExecutionContext
 
-class KeyValuesEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionContext)
+class JdbcHistoryEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionContext)
   extends ReadSideProcessor[KVStoreEvent] with LazyLogging {
 
   val createTableSql =
-    "CREATE TABLE IF NOT EXISTS PUBLIC.keyvalues (key NVARCHAR2(64), value NVARCHAR2(512), timestamp TIMESTAMP WITH TIME ZONE, PRIMARY KEY (key))"
+    "CREATE TABLE IF NOT EXISTS PUBLIC.history (key NVARCHAR2(64), value NVARCHAR2(512), timestamp TIMESTAMP WITH TIME ZONE);CREATE INDEX IF NOT EXISTS PUBLIC.history_key_index ON PUBLIC.history (key);"
 
   val buildTables: Connection => Unit = { connection =>
-    tryWith(connection.createStatement()) {
+    JdbcSession.tryWith(connection.createStatement()) {
       _.executeUpdate(createTableSql)
     }
   }
@@ -27,12 +25,12 @@ class KeyValuesEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionCont
 
       logger.trace(s"Saving event ${eventElement.entityId} @ offset ${eventElement.offset}: ${eventElement.event}")
 
-      tryWith(
+      JdbcSession.tryWith(
         // "MERGE" is H2's equivalent to 'INSERT OR UPDATE'.
         // See http://www.h2database.com/html/grammar.html#merge
         // We use "MERGE" here because we want this read-side to keep only the lastest message per each name
         // Since 'name' is the table Primary Key then merging is trivial.
-        connection.prepareStatement("MERGE INTO keyvalues (key, value, timestamp) VALUES (?, ?, ?)")
+        connection.prepareStatement("INSERT INTO history (key, value, timestamp) VALUES (?, ?, ?)")
       ) { statement =>
         statement.setString(1, eventElement.entityId)
         statement.setString(2, eventElement.event.value)
@@ -44,7 +42,7 @@ class KeyValuesEventProcessor(readSide: JdbcReadSide)(implicit ec: ExecutionCont
 
   override def buildHandler() =
     readSide
-      .builder[KVStoreEvent]("KeyValueReadSide")
+      .builder[KVStoreEvent]("HistoryReadSide")
       .setGlobalPrepare(buildTables)
       .setEventHandler(processKeyValueChanged)
       .build()

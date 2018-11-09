@@ -9,6 +9,7 @@ val scalaTest = "org.scalatest" %% "scalatest" % "3.0.4" % Test
 val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
 val h2 = "com.h2database" % "h2" % "1.4.197"
 val alpakkaCassandra = "com.lightbend.akka" %% "akka-stream-alpakka-cassandra" % "1.0-M1"
+val cassandraExtras = "com.datastax.cassandra" % "cassandra-driver-extras" % "3.2.0"
 val cats = "org.typelevel" %% "cats-core" % "1.4.0"
 
 //lagomKafkaPort in ThisBuild := 9092
@@ -37,6 +38,7 @@ lazy val `kvstore-impl` = (project in file("kvstore-impl"))
       lagomScaladslPersistenceJdbc,
       lagomScaladslKafkaBroker,
       lagomScaladslTestKit,
+      cassandraExtras,
       h2,
       cats,
       macwire,

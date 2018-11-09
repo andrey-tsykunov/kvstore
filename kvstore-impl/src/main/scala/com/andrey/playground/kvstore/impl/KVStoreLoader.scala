@@ -41,10 +41,13 @@ abstract class KVStoreApplication(context: LagomApplicationContext)
 
   //lazy val debugEventProcessor = wire[DebugEventProcessor]
 
-  lazy val inMemoryEventProcessor = wire[KeyValuesEventProcessor]
-  lazy val historyEventProcessor = wire[HistoryEventProcessor]
+  lazy val inMemoryCurrentStateEventProcessor = wire[JdbcCurrentStateEventProcessor]
+  lazy val inMemoryHistoryEventProcessor = wire[JdbcHistoryEventProcessor]
 
-  lazy val repository: KVRepository = wire[JdbcKVRepository]
+  lazy val cassandraEventProcessor = wire[CassandraEventProcessor]
+
+  //lazy val repository: KVRepository = wire[JdbcKVRepository]
+  lazy val repository: KVRepository = wire[CassandraKVRepository]
 
   // Bind the service that this server provides
   override lazy val lagomServer = serverFor[KVStoreService](wire[KVStoreServiceImpl])
@@ -54,7 +57,9 @@ abstract class KVStoreApplication(context: LagomApplicationContext)
 
   // Register the KeyValueStore persistent entity
   persistentEntityRegistry.register(wire[KVStoreEntity])
+
 //  readSide.register(debugEventProcessor)
-  readSide.register(inMemoryEventProcessor)
-  readSide.register(historyEventProcessor)
+  //readSide.register(inMemoryCurrentStateEventProcessor)
+  //readSide.register(inMemoryHistoryEventProcessor)
+  readSide.register(cassandraEventProcessor)
 }
