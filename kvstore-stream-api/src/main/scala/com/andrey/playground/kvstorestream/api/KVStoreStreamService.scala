@@ -4,6 +4,10 @@ import akka.NotUsed
 import akka.stream.scaladsl.Source
 import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
 
+object KVStoreStreamService {
+  val name = "kvstore-stream"
+}
+
 /**
   * The KeyValueStore stream interface.
   *
@@ -12,12 +16,14 @@ import com.lightbend.lagom.scaladsl.api.{Service, ServiceCall}
   */
 trait KVStoreStreamService extends Service {
 
+  import KVStoreStreamService._
+
   def stream: ServiceCall[Source[String, NotUsed], Source[String, NotUsed]]
 
   override final def descriptor = {
     import Service._
 
-    named("keyvaluestore-stream")
+    named(name)
       .withCalls(
         namedCall("stream", stream)
       ).withAutoAcl(true)

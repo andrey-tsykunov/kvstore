@@ -16,7 +16,8 @@ val cats = "org.typelevel" %% "cats-core" % "1.4.0"
 //lagomKafkaZookeeperPort in ThisBuild := 2181
 lagomKafkaEnabled in ThisBuild := false
 
-//lagomCassandraPort in ThisBuild := 4000
+//lagomCassandraPort in ThisBuild := 9042
+//lagomCassandraEnabled in ThisBuild := false
 
 lazy val `keyvaluestore` = (project in file("."))
   .aggregate(`kvstore-api`, `kvstore-impl`, `kvstore-stream-api`, `kvstore-stream-impl`)
